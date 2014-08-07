@@ -65,9 +65,14 @@ found in the LICENSE file.
           <tbody>
             {{range .versions}}
             <tr>
-              <td>{{.Key}}</td>
+              <td><a href="?version={{.Key}}">{{.Key}}</a></td>
               <td class="text-right">{{.Count}}</td>
               <td class="text-right">{{.Percentage | printf "%.01f"}}%</td>
+            </tr>
+            {{end}}
+            {{if .filterVersion}}
+            <tr>
+            <td colspan="3"><a href="?version=">Clear filter</a></td>
             </tr>
             {{end}}
           </tbody>
@@ -83,9 +88,14 @@ found in the LICENSE file.
           <tbody>
             {{range .platforms}}
             <tr>
-              <td>{{.Key}}</td>
+              <td><a href="?platform={{.Key}}">{{.Key}}</a></td>
               <td class="text-right">{{.Count}}</td>
               <td class="text-right">{{.Percentage | printf "%.01f"}}%</td>
+            </tr>
+            {{end}}
+            {{if .filterPlatform}}
+            <tr>
+            <td colspan="3"><a href="?platform=">Clear filter</a></td>
             </tr>
             {{end}}
           </tbody>

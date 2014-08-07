@@ -59,8 +59,11 @@ func main() {
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+		qs := r.URL.Query()
+		filterVersion := qs.Get("version")
+		filterPlatform := qs.Get("platform")
 		k := timestamp()
-		rep := getReport(k)
+		rep := getReport(k, filterVersion, filterPlatform)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err := tpl.Execute(w, rep)
@@ -75,7 +78,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func reportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	k := timestamp()
-	rep := getReport(k)
+	rep := getReport(k, "", "")
 	json.NewEncoder(w).Encode(rep)
 }
 
@@ -185,9 +188,11 @@ type category struct {
 var reportCache map[string]interface{}
 var reportMutex sync.Mutex
 
-func getReport(key string) map[string]interface{} {
+func getReport(key, filterVersion, filterPlatform string) map[string]interface{} {
 	reportMutex.Lock()
 	defer reportMutex.Unlock()
+
+	key = key + "|" + filterVersion + "|" + filterPlatform
 
 	if k := reportCache["key"]; k == key {
 		return reportCache
@@ -225,8 +230,16 @@ func getReport(key string) map[string]interface{} {
 		}
 		f.Close()
 
+		ver := transformVersion(rep.Version)
+		if filterVersion != "" && ver != filterVersion {
+			continue
+		}
+		if filterPlatform != "" && rep.Platform != filterPlatform {
+			continue
+		}
+
 		nodes++
-		versions = append(versions, transformVersion(rep.Version))
+		versions = append(versions, ver)
 		platforms = append(platforms, rep.Platform)
 		ps := strings.Split(rep.Platform, "-")
 		oses = append(oses, ps[0])
@@ -316,6 +329,8 @@ func getReport(key string) map[string]interface{} {
 	})
 
 	r := make(map[string]interface{})
+	r["filterVersion"] = filterVersion
+	r["filterPlatform"] = filterPlatform
 	r["key"] = key
 	r["nodes"] = nodes
 	r["categories"] = categories
